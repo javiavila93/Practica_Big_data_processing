@@ -10,7 +10,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion,
   "org.apache.spark" %% "spark-sql" % sparkVersion,
   "org.apache.spark" %% "spark-avro" % sparkVersion,
-  "org.postgresql" % "postgresql" % "42.2.16",
+  "org.postgresql" % "postgresql" % "42.2.23",
   "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
-  "org.apache.kafka" % "kafka-clients" % "2.8.0"
+  "org.apache.kafka" % "kafka-clients" % "2.8.1"
 )

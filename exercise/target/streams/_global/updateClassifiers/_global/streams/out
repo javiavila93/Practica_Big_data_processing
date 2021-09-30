@@ -1,0 +1,4 @@
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/media/javier/7790F5A44F604147/Bootcamp/Practicas_Bootcamp/Practica_Big_data_processing/exercise/"), "exercise")...
+[debug] Done updating ProjectRef(uri("file:/media/javier/7790F5A44F604147/Bootcamp/Practicas_Bootcamp/Practica_Big_data_processing/exercise/"), "exercise")
+[warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.

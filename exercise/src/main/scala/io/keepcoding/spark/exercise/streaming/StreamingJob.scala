@@ -7,39 +7,53 @@ import scala.concurrent.{Await, Future}
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-case class AntennaMessage(timestamp: Timestamp, id: String, metric: String, value: Long)
+case class AntennaMessage(bytes: Long, timestamp: Timestamp, app: String, id: String, antenna_id: String) //Definimos el case class de los datos recibir
 
 trait StreamingJob {
 
   val spark: SparkSession
 
+  //Función que se encarga de leer de kafka
   def readFromKafka(kafkaServer: String, topic: String): DataFrame
-
+  //Función encargada transformar el mensaje de kafka en un dataframe por columnas(keys y esquema de AntennaMessage)
   def parserJsonData(dataFrame: DataFrame): DataFrame
-
-  def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
-
-  def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
-
-  def computeDevicesCountByCoordinates(dataFrame: DataFrame): DataFrame
-
+  //Función que calcula el consumo de consumo de byte por usuarios cada 5 min y añade la columna type con el literal "user_total_bytes"
+  def computeSumBytesUser(dataFrame: DataFrame): DataFrame
+  //Función que calcula el consumo de consumo de byte por app cada 5 min  y añade la columna type con el literal "app_bytes_total"
+  def computeSumBytesApp(dataFrame: DataFrame): DataFrame
+  //Función que calcula el consumo de consumo de byte por antenna cada 5 min y añade la columna type con el literal "antenna_bytes_total"
+  def computeSumBytesAntenna(dataFrame: DataFrame): DataFrame
+  //Función que escribe en el Postgress los datos de computeSumBytesUser, computeSumBytesApp y computeSumBytesAntenna
   def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit]
-
+  //Función que escribe en formato parquet en una ruta local leidos de kafka jerarquizados por AÑO, MES, DÍA DEL MES Y HORA
   def writeToStorage(dataFrame: DataFrame, storageRootPath: String): Future[Unit]
-
+  //Variables de entorno
   def run(args: Array[String]): Unit = {
-    val Array(kafkaServer, topic, jdbcUri, jdbcMetadataTable, aggJdbcTable, jdbcUser, jdbcPassword, storagePath) = args
+    val Array(kafkaServer, topic, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword, storageRootPath) = args
     println(s"Running with: ${args.toSeq}")
 
+    // Variable que almacena el DF leídos de kafak
     val kafkaDF = readFromKafka(kafkaServer, topic)
+    //Variable que almacena el DF con los datos transformados
     val antennaDF = parserJsonData(kafkaDF)
-    val metadataDF = readAntennaMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
-    val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF)
-    val storageFuture = writeToStorage(antennaDF, storagePath)
-    val aggByCoordinatesDF = computeDevicesCountByCoordinates(antennaMetadataDF)
-    val aggFuture = writeToJdbc(aggByCoordinatesDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    //Variable del futuro en ejecución para escribir los datos en parquet
+    val storageFuture = writeToStorage(antennaDF, storageRootPath)
+    //Variable que almacena el DF con los datos agregados de consumo de bytes por usuario
+    val aggBySumBytesDFUser = computeSumBytesUser(antennaDF)
+    //Variable que almacena el DF con los datos agregados de consumo de bytes por app
+    val aggBySumBytesDFApp = computeSumBytesApp(antennaDF)
+    //Variable que almacena el DF con los datos agregados de consumo de bytes por antena
+    val aggBySumBytesDFAntenna = computeSumBytesAntenna(antennaDF)
+    //Variable del futuro en ejecución para escribir los datos en postgres de aggBySumBytesDFUser
+    val aggFutureUser = writeToJdbc(aggBySumBytesDFUser, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    //Variable del futuro en ejecución para escribir los datos en postgres de aggBySumBytesDFApp
+    val aggFutureAPP = writeToJdbc(aggBySumBytesDFApp, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
+    //Variable del futuro en ejecución para escribir los datos en postgres de aggBySumBytesDFAntenna
+    val aggFutureAntenna = writeToJdbc(aggBySumBytesDFAntenna, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
 
-    Await.result(Future.sequence(Seq(aggFuture, storageFuture)), Duration.Inf)
+
+    //Funcion para mantener el Spark operativo hasta finalizar el job (Infito) del array secuencial
+    Await.result(Future.sequence(Seq(aggFutureUser, aggFutureAPP, aggFutureAntenna, storageFuture)), Duration.Inf)
 
     spark.close()
   }
