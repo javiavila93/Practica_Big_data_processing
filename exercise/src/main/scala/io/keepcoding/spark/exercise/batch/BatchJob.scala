@@ -35,7 +35,7 @@ trait BatchJob {
     println(s"Running with: ${args.toSeq}")
 
     // Variable que almacena el DF leídos de la ruta en local en formato parquet y los filtra por la variable filterDate
-    val antennaDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate))
+    val antennaDF = readFromStorage(storagePath, OffsetDateTime.parse(filterDate)).cache()
     //Variable que almacena el DF de user_metadata
     val metadataDF = readAntennaMetadata(jdbcUri, jdbcMetadataTable, jdbcUser, jdbcPassword)
     //Variable que almacena el DF del join entre DF parquet y user_metadata
