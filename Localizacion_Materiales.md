@@ -2,10 +2,10 @@
 
 
 ## Localización de Entregas
-- Caputaras de Pantalla tablas en: 
+- Caputaras de Pantalla en: 
 	- ./Capturas/Tablas_SQL
-	- ./Capturas/Superset
-- Datos Parquet {checkpoint, data y historical} temp_project
+	- ./Capturas/Superset***
+- Datos Parquet {checkpoint, data y historical}  en ./temp_project
 
 
 
@@ -42,3 +42,5 @@ Este proyecto funcion hibrido entre la cloud y el equipo local:
  - En la misma instancia de VM se instala Superset
  - Se configura la conexion con el progres
  - Se crean visualizaciones web con en la dirección de Superset
+*** No he sido capaz de conectar el postgres, intentar dentro de poco
+

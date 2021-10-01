@@ -40,45 +40,19 @@ object AntennaStreamingJob extends StreamingJob {
 
   }
 
-  //definimos por separado la suma de usuarios, app y antena
-  override def computeSumBytesUser(dataFrame: DataFrame): DataFrame = {
+  //Función para sumar los bytes según los argumentos proporcionados en StreamingJob
+  override def computeSumBytes(dataFrame: DataFrame,  fieldID: String, valueLit: String): DataFrame = {
     dataFrame
-      .select($"timestamp", $"id", $"bytes") //Seleccionamos la columnas con las que trabajar
+      .select($"timestamp", col(fieldID), $"bytes") //Seleccionamos la columnas con las que trabajar
       .withWatermark("timestamp", "1 minutes") //Marca de 1 minuto
-      .groupBy($"id", window($"timestamp", "5 minutes")) // Definimos la ventana de 5 minutos
+      .groupBy(col(fieldID), window($"timestamp", "5 minutes")) // Definimos la ventana de 5 minutos
       .agg(
         sum($"bytes").as("value") //Realizamos la agregación y cambiamos el nombre por "value"
       )
-      .withColumn("type", lit("user_total_bytes")) //Añadimos la columna type añadiendo el literal "user_total_bytes"
-      .select($"window.start".as("timestamp"), $"id", $"value", $"type") //Seleccionamos el inicio de la venta y los valores subir al postgres
+      .withColumn("type", lit(valueLit))
+      .select($"window.start".as("timestamp"), col(fieldID).as("id"), $"value", $"type") //Seleccionamos el inicio de la venta y los valores subir al postgres
   }
 
-  //Función igual que la computeSumBytesUser pero con la columna App añadiendo los valores de la columna a una nueva columna "id"
-  override def computeSumBytesApp(dataFrame: DataFrame): DataFrame = {
-      dataFrame
-        .select($"timestamp", $"app", $"bytes")
-        .withWatermark("timestamp", "1 minutes")
-        .groupBy($"app", window($"timestamp", "5 minutes"), $"app")
-        .agg(
-          sum($"bytes").as("value")
-        )
-        .withColumn("type", lit("app_bytes_total"))
-        .select($"window.start".as("timestamp"), $"app".as("id"), $"value", $"type")
-  }
-  //Función igual que la computeSumBytesUser pero con la columna antenna_id añadiendo los valores de la columna a una nueva columna "id"
-  override def computeSumBytesAntenna(dataFrame: DataFrame): DataFrame = {
-      dataFrame
-        .select($"timestamp", $"antenna_id", $"bytes")
-        .withWatermark("timestamp", "1 minutes")
-        .groupBy($"antenna_id", window($"timestamp", "5 minutes"), $"antenna_id")
-        .agg(
-          sum($"bytes").as("value")
-        )
-        .withColumn("type", lit("antenna_bytes_total"))
-        .select($"window.start".as("timestamp"), $"antenna_id".as("id"), $"value", $"type")
-
-
-  }
 
   // Función para escribir en Postgress
   override def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit] = Future {

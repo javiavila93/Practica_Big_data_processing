@@ -20,13 +20,8 @@ trait BatchJob {
   def readAntennaMetadata(jdbcURI: String, jdbcTable: String, user: String, password: String): DataFrame
   //Función que se encarga de realizar cruce entre DF parquet y DF user_metadata
   def enrichAntennaWithMetadata(antennaDF: DataFrame, metadataDF: DataFrame): DataFrame
-
-  //Función que calcula el agregado de consumo de datos por usuario
-  def computeSumBytesUser(dataFrame: DataFrame): DataFrame
-  //Función que calcula el agregado de consumo de datos por app
-  def computeSumBytesApp(dataFrame: DataFrame): DataFrame
-  //Función que calcula el agregado de consumo de datos por Antena
-  def computeSumBytesAntenna(dataFrame: DataFrame): DataFrame
+  //Función que calcula el agregado de consumo de datos por argumento fieldID y valueLit
+  def computeSumBytes(dataFrame: DataFrame, fieldID: String, valueLit: String): DataFrame
   //Función que calcula el agregado de consumo de datos por usuario y muestra solo los que han pasado su límite
   def calculateQuotaUser(dataFrame: DataFrame): DataFrame
   //Función que escribe en el Postgress
@@ -46,13 +41,14 @@ trait BatchJob {
     //Variable que almacena el DF del join entre DF parquet y user_metadata
     val antennaMetadataDF = enrichAntennaWithMetadata(antennaDF, metadataDF).cache()
     //Variable que almacena el DF con los datos agregados de consumo de bytes por usuario
-    val SumBytesUserDF = computeSumBytesUser(antennaDF)
+    val SumBytesUserDF = computeSumBytes(antennaDF, "id", "user_total_bytes")
     //Variable que almacena el DF con los datos agregados de consumo de bytes por app
-    val SumBytesAppDF = computeSumBytesApp(antennaDF)
+    val SumBytesAppDF = computeSumBytes(antennaDF, "app", "app_bytes_total")
     //Variable que almacena el DF con los datos agregados de consumo de bytes por antena
-    val SumBytesAntennaDF = computeSumBytesAntenna(antennaDF)
+    val SumBytesAntennaDF = computeSumBytes(antennaDF, "antenna_id", "antenna_bytes_total")
     //Variable que almacena el DF con usuarios que superaron su quota
     val ConsumerUserQuota = calculateQuotaUser(antennaMetadataDF)
+
 
     writeToJdbc(SumBytesUserDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword) //Declaramos para escribir SumBytesUserDF en bytes_hourly
     writeToJdbc(SumBytesAppDF, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword) //Declaramos para escribir SumBytesAppDF en bytes_hourly

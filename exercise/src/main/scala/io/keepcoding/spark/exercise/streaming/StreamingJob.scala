@@ -17,12 +17,8 @@ trait StreamingJob {
   def readFromKafka(kafkaServer: String, topic: String): DataFrame
   //Función encargada transformar el mensaje de kafka en un dataframe por columnas(keys y esquema de AntennaMessage)
   def parserJsonData(dataFrame: DataFrame): DataFrame
-  //Función que calcula el consumo de consumo de byte por usuarios cada 5 min y añade la columna type con el literal "user_total_bytes"
-  def computeSumBytesUser(dataFrame: DataFrame): DataFrame
-  //Función que calcula el consumo de consumo de byte por app cada 5 min  y añade la columna type con el literal "app_bytes_total"
-  def computeSumBytesApp(dataFrame: DataFrame): DataFrame
-  //Función que calcula el consumo de consumo de byte por antenna cada 5 min y añade la columna type con el literal "antenna_bytes_total"
-  def computeSumBytesAntenna(dataFrame: DataFrame): DataFrame
+  //Función que calcula el consumo de consumo de bytes segun los argumentos cada 5 min y añade la columna type con el literal
+  def computeSumBytes(dataFrame: DataFrame, fieldID: String, valuelit: String): DataFrame
   //Función que escribe en el Postgress los datos de computeSumBytesUser, computeSumBytesApp y computeSumBytesAntenna
   def writeToJdbc(dataFrame: DataFrame, jdbcURI: String, jdbcTable: String, user: String, password: String): Future[Unit]
   //Función que escribe en formato parquet en una ruta local leidos de kafka jerarquizados por AÑO, MES, DÍA DEL MES Y HORA
@@ -39,11 +35,11 @@ trait StreamingJob {
     //Variable del futuro en ejecución para escribir los datos en parquet
     val storageFuture = writeToStorage(antennaDF, storageRootPath)
     //Variable que almacena el DF con los datos agregados de consumo de bytes por usuario
-    val aggBySumBytesDFUser = computeSumBytesUser(antennaDF)
+    val aggBySumBytesDFUser = computeSumBytes(antennaDF, "id", "user_total_bytes")
     //Variable que almacena el DF con los datos agregados de consumo de bytes por app
-    val aggBySumBytesDFApp = computeSumBytesApp(antennaDF)
+    val aggBySumBytesDFApp = computeSumBytes(antennaDF, "app", "app_bytes_total")
     //Variable que almacena el DF con los datos agregados de consumo de bytes por antena
-    val aggBySumBytesDFAntenna = computeSumBytesAntenna(antennaDF)
+    val aggBySumBytesDFAntenna = computeSumBytes(antennaDF, "antenna_id", "antenna_bytes_total")
     //Variable del futuro en ejecución para escribir los datos en postgres de aggBySumBytesDFUser
     val aggFutureUser = writeToJdbc(aggBySumBytesDFUser, jdbcUri, aggJdbcTable, jdbcUser, jdbcPassword)
     //Variable del futuro en ejecución para escribir los datos en postgres de aggBySumBytesDFApp

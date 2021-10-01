@@ -1,2 +1,2 @@
 v1
-{"path":"file:///media/javier/7790F5A44F604147/Bootcamp/Practicas_Bootcamp/Practica_Big_data_processing/temp_project/data/year=2021/month=9/day=30/hour=21/part-00000-01273950-7f7c-4850-8638-a96e317264b2.c000.snappy.parquet","size":2002,"isDir":false,"modificationTime":1633031515998,"blockReplication":1,"blockSize":33554432,"action":"add"}
+{"path":"file:///media/javier/7790F5A44F604147/Bootcamp/Practicas_Bootcamp/Practica_Big_data_processing/temp_project/data/year=2021/month=10/day=1/hour=21/part-00000-07c61a54-5162-4c57-ac0f-7ffbba5158e6.c000.snappy.parquet","size":1957,"isDir":false,"modificationTime":1633115012207,"blockReplication":1,"blockSize":33554432,"action":"add"}

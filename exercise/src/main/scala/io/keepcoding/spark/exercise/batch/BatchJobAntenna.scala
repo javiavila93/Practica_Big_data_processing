@@ -49,41 +49,16 @@ object BatchJobAntenna extends BatchJob {
       ).drop($"metadata.id")
   }
 
-  //Función para calcular el consumo a la hora específicada del consumo de bytes por usuario
-  override def computeSumBytesUser(dataFrame: DataFrame): DataFrame = {
+  //Función para calcular el consumo a la hora de bytes según argumentos
+  override def computeSumBytes(dataFrame: DataFrame, fieldID: String, valueLit: String): DataFrame = {
     dataFrame
-      .select($"timestamp", $"id", $"bytes")
-      .groupBy($"id", window($"timestamp", "1 hour"))
+      .select($"timestamp", col(fieldID), $"bytes")
+      .groupBy(col(fieldID), window($"timestamp", "1 hour"))
       .agg(
         sum($"bytes").as("value")
       )
-      .withColumn("type", lit("user_total_bytes"))
-      .select($"window.start".as("timestamp"), $"id", $"value", $"type")
-
-  }
-
-  //Función para calcular el consumo a la hora específicada del consumo de bytes por app
-  override def computeSumBytesApp(dataFrame: DataFrame): DataFrame = {
-    dataFrame
-      .select($"timestamp", $"app", $"bytes")
-      .groupBy($"app", window($"timestamp", "1 hour"))
-      .agg(
-        sum($"bytes").as("value")
-      )
-      .withColumn("type", lit("app_bytes_total"))
-      .select($"window.start".as("timestamp"), $"app".as("id"), $"value", $"type")
-    }
-
-  //Función para calcular el consumo a la hora específicada del consumo de bytes por antena
-  override def computeSumBytesAntenna(dataFrame: DataFrame): DataFrame = {
-    dataFrame
-      .select($"timestamp", $"antenna_id", $"bytes")
-      .groupBy($"antenna_id", window($"timestamp", "1 hour"))
-      .agg(
-        sum($"bytes").as("value")
-      )
-      .withColumn("type", lit("antenna_bytes_total"))
-      .select($"window.start".as("timestamp"), $"antenna_id".as("id"), $"value", $"type")
+      .withColumn("type", lit(valueLit))
+      .select($"window.start".as("timestamp"), col(fieldID).as("id"), $"value", $"type")
 
   }
 
